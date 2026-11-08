@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-slate-200 antialiased;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded bg-line;
+}
+
+.reasoning {
+  @apply mb-2 whitespace-pre-wrap rounded-md border border-line bg-black/20 p-2 text-xs text-slate-400;
+}
+
+.cursor::after {
+  content: "▋";
+  @apply animate-pulse text-accent;
+}
