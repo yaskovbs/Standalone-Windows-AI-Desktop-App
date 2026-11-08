@@ -9,9 +9,10 @@ interface Props {
   onSettings: () => void;
   onMedia: () => void;
   onGithub: () => void;
+  onRecap: () => void;
 }
 
-export default function Sidebar({ conversations, activeId, onOpen, onNew, onDelete, onSettings, onMedia, onGithub }: Props) {
+export default function Sidebar({ conversations, activeId, onOpen, onNew, onDelete, onSettings, onMedia, onGithub, onRecap }: Props) {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-panel">
       <button
@@ -45,6 +46,9 @@ export default function Sidebar({ conversations, activeId, onOpen, onNew, onDele
       </nav>
 
       <div className="border-t border-line text-sm text-slate-400">
+        <button className="block w-full px-4 py-2 text-left hover:text-slate-100" onClick={onRecap}>
+          🎬 Recap maker
+        </button>
         <button className="block w-full px-4 py-2 text-left hover:text-slate-100" onClick={onMedia}>
           👁 Eyes &amp; ears
         </button>

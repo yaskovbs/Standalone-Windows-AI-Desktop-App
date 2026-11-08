@@ -3,6 +3,7 @@
 mod commands;
 mod commands_github;
 mod commands_media;
+mod commands_recap;
 mod commands_share;
 mod contribute;
 mod db;
@@ -13,8 +14,12 @@ mod hardware;
 mod media;
 mod prompt;
 mod proposals;
+mod recap;
+mod recap_plan;
+mod recap_render;
 mod redact;
 mod settings;
+mod signals;
 mod tools;
 mod vision;
 mod voice;
@@ -39,7 +44,7 @@ pub struct AppState {
     pub tools: tools::Tools,
     pub recorder: Mutex<Option<voice::Recorder>>,
     pub tts: Mutex<Option<Child>>,
-    pub media_cancel: AtomicBool,
+    pub media_cancel: Arc<AtomicBool>,
     pub media_busy: AtomicBool,
     pub proposals: Mutex<HashMap<String, proposals::Proposal>>,
 }
@@ -90,7 +95,7 @@ pub fn run() {
                 tools: tools::Tools::new(tool_dirs),
                 recorder: Mutex::new(None),
                 tts: Mutex::new(None),
-                media_cancel: AtomicBool::new(false),
+                media_cancel: Arc::new(AtomicBool::new(false)),
                 media_busy: AtomicBool::new(false),
                 proposals: Mutex::new(HashMap::new()),
             });
@@ -136,6 +141,10 @@ pub fn run() {
             commands_media::cancel_media,
             commands_media::attach_media,
             commands_media::clear_media,
+            commands_recap::make_recap,
+            commands_recap::list_recaps,
+            commands_recap::delete_recap,
+            commands_recap::reveal_file,
             commands_share::share_status,
             commands_share::set_share_consent,
             commands_share::withdraw_data,

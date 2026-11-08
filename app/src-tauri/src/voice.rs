@@ -211,6 +211,39 @@ pub fn speak(text: &str, rate: i32, slot: &Mutex<Option<Child>>) -> Result<()> {
     }
 }
 
+/// Render speech into a WAV file (used for recap voice-overs). Windows only.
+pub fn speak_to_wav(text: &str, rate: i32, wav: &Path) -> Result<()> {
+    #[cfg(windows)]
+    {
+        use std::io::Write;
+        use std::os::windows::process::CommandExt;
+        use std::process::{Command, Stdio};
+        let target = wav.to_string_lossy().replace('\'', "\'\'");
+        let script = format!(
+            "[Console]::InputEncoding=[Text.Encoding]::UTF8; Add-Type -AssemblyName System.Speech; \
+             $s=New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.Rate={}; \
+             $s.SetOutputToWaveFile('{}'); $s.Speak([Console]::In.ReadToEnd()); $s.Dispose()",
+            rate.clamp(-10, 10),
+            target
+        );
+        let mut child = Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .stdin(Stdio::piped())
+            .creation_flags(0x0800_0000)
+            .spawn()?;
+        child.stdin.take().ok_or_else(|| anyhow!("no stdin"))?.write_all(text.as_bytes())?;
+        if !child.wait()?.success() || !wav.is_file() {
+            return Err(anyhow!("text-to-speech failed"));
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (text, rate, wav);
+        Err(anyhow!("voice-over needs Windows"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

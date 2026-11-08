@@ -15,6 +15,16 @@ pub struct Conversation {
     pub updated_at: i64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct RecapRow {
+    pub id: i64,
+    pub title: String,
+    pub path: String,
+    pub narration: Option<String>,
+    pub duration: f32,
+    pub created_at: i64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredMessage {
     pub id: i64,
@@ -50,6 +60,14 @@ impl Db {
              CREATE TABLE IF NOT EXISTS media_notes (
                  conversation_id INTEGER PRIMARY KEY REFERENCES conversations(id) ON DELETE CASCADE,
                  timeline TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS recaps (
+                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                 title TEXT NOT NULL,
+                 path TEXT NOT NULL,
+                 narration TEXT,
+                 duration REAL NOT NULL,
+                 created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
              );
              CREATE TABLE IF NOT EXISTS bookmarks (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -189,6 +207,30 @@ impl Db {
     pub fn clear_media(&self, conv: i64) -> Result<()> {
         let conn = self.0.lock().unwrap();
         conn.execute("DELETE FROM media_notes WHERE conversation_id = ?1", params![conv])?;
+        Ok(())
+    }
+
+    pub fn add_recap(&self, title: &str, path: &str, narration: Option<&str>, duration: f32) -> Result<i64> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "INSERT INTO recaps (title, path, narration, duration) VALUES (?1, ?2, ?3, ?4)",
+            params![title, path, narration, duration],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn list_recaps(&self) -> Result<Vec<RecapRow>> {
+        let conn = self.0.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, title, path, narration, duration, created_at FROM recaps ORDER BY id DESC")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(RecapRow { id: r.get(0)?, title: r.get(1)?, path: r.get(2)?, narration: r.get(3)?, duration: r.get(4)?, created_at: r.get(5)? })
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    }
+
+    pub fn delete_recap(&self, id: i64) -> Result<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute("DELETE FROM recaps WHERE id = ?1", params![id])?;
         Ok(())
     }
 

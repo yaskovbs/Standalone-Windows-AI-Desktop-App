@@ -66,6 +66,16 @@ Read `server/README.md` for your operator duties (privacy policy, deletion reque
   set the Model URL in Settings. A local 3B-7B model will not match a frontier model - expect it to be solid on
   routine code, weaker on large or novel problems.
 
+## 7. Recap maker (no cloud AI)
+Inspired by the web app *movies--tv--recaps--maker--with--ai--app*, which sends the video to Google Gemini to pick moments.
+Here **everything runs on-device**: the local vision model describes sampled frames, whisper.cpp transcribes dialogue,
+the local LLM rates every moment 0-9 for story importance, and loudness / scene-cut / speech-density signals break ties.
+The film is split into one bucket per wanted clip and the best moment of each bucket is kept, so the recap follows the
+story from start to finish; ffmpeg cuts and joins the clips (no file-size limit), and Windows speech can narrate it.
+Open **Recap maker**, pick a file, describe the plot (this helps), choose the length, press Create.
+Honest limits: it sees sampled frames, not every frame, so picks are less precise than a model that watches the whole
+video natively; more *frames to analyse* improves quality but takes longer. The UI is English only (the original has 6 languages).
+
 ## Notes
 - Rust logic tests (path guard, proposal parser, diff, web parsing, prompt trimming) pass; the full Windows build and the
   sidecar/audio/screen code have not been compiled or run; `llama-cpp-2` APIs change between

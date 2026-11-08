@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ConsentDialog from "./components/ConsentDialog";
+import RecapPanel from "./components/RecapPanel";
 import GithubPanel from "./components/GithubPanel";
 import MediaPanel from "./components/MediaPanel";
 import ChatView from "./components/ChatView";
@@ -15,7 +16,7 @@ import { api } from "./lib/api";
 export default function App() {
   const setup = useSetup();
   const chat = useChat();
-  const [panel, setPanel] = useState<"settings" | "media" | "github" | null>(null);
+  const [panel, setPanel] = useState<"settings" | "media" | "github" | "recap" | null>(null);
   const [webDefault, setWebDefault] = useState(true);
   const [speak, setSpeak] = useState(false);
 
@@ -61,6 +62,7 @@ export default function App() {
           onSettings={() => setPanel("settings")}
           onMedia={() => setPanel("media")}
           onGithub={() => setPanel("github")}
+          onRecap={() => setPanel("recap")}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           <ChatView messages={chat.messages} error={chat.error} stats={chat.stats} onRate={chat.rate} />
@@ -93,6 +95,7 @@ export default function App() {
         />
       )}
       {panel === "media" && <MediaPanel onClose={() => setPanel(null)} ensureConversation={ensureConversation} />}
+      {panel === "recap" && <RecapPanel onClose={() => setPanel(null)} />}
       {panel === "github" && <GithubPanel onClose={() => setPanel(null)} />}
     </div>
   );

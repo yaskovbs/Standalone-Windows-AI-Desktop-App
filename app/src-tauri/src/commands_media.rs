@@ -116,7 +116,7 @@ pub fn stop_speaking(state: State<'_, AppState>) {
 
 // ---------- seeing ----------
 
-fn vision_files(state: &AppState) -> CmdResult<(PathBuf, PathBuf)> {
+pub(crate) fn vision_files(state: &AppState) -> CmdResult<(PathBuf, PathBuf)> {
     let s = Settings::load(&state.db);
     let (model, mmproj) = (state.models_dir.join(s.vision_model_file), state.models_dir.join(s.mmproj_file));
     if !model.is_file() || !mmproj.is_file() {
@@ -177,8 +177,9 @@ async fn run_watch(state: &AppState, path: &str, on_event: Channel<MediaEvent>) 
         interval_secs: s.frame_interval_secs,
         max_frames: s.max_frames,
         gpu: state.hardware.gpu_name.is_some(),
+        scene_detect: false,
     };
-    media::watch(&state.tools, Path::new(path), &models, &cfg, &state.media_cancel, |e| {
+    media::watch(&state.tools, Path::new(path), &models, &cfg, &*state.media_cancel, |e| {
         let _ = on_event.send(e);
     })
     .await

@@ -152,3 +152,39 @@ export interface ShareStatus {
   enabled: boolean;
   server: string;
 }
+
+export interface RecapRequest {
+  path: string;
+  title: string;
+  description: string;
+  target_secs: number;
+  clip_secs: number;
+  max_frames: number;
+  narrate: boolean;
+  language: string;
+  scene_detect: boolean;
+}
+
+export interface ClipInfo {
+  start: number;
+  end: number;
+  summary: string;
+}
+
+export interface RecapResult {
+  output_path: string;
+  clips: ClipInfo[];
+  narration: string | null;
+  voiceover: boolean;
+  total_secs: number;
+  rated_by_model: boolean;
+}
+
+export interface RecapRow {
+  id: number;
+  title: string;
+  path: string;
+  narration: string | null;
+  duration: number;
+  created_at: number;
+}

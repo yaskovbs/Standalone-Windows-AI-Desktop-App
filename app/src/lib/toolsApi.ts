@@ -5,6 +5,9 @@ import type {
   MediaEvent,
   MediaMemory,
   Proposal,
+  RecapRequest,
+  RecapResult,
+  RecapRow,
   ShareStatus,
   ToolsStatus,
 } from "../types";
@@ -36,6 +39,15 @@ export const toolsApi = {
   attachMedia: (conversationId: number, memory: MediaMemory) =>
     invoke<void>("attach_media", { conversationId, memory }),
   clearMedia: (conversationId: number) => invoke<void>("clear_media", { conversationId }),
+
+  makeRecap(request: RecapRequest, onEvent: (e: MediaEvent) => void) {
+    const channel = new Channel<MediaEvent>();
+    channel.onmessage = onEvent;
+    return invoke<RecapResult>("make_recap", { request, onEvent: channel });
+  },
+  listRecaps: () => invoke<RecapRow[]>("list_recaps"),
+  deleteRecap: (id: number) => invoke<void>("delete_recap", { id }),
+  revealFile: (path: string) => invoke<void>("reveal_file", { path }),
 
   shareStatus: () => invoke<ShareStatus>("share_status"),
   setShareConsent: (enabled: boolean) => invoke<ShareStatus>("set_share_consent", { enabled }),
