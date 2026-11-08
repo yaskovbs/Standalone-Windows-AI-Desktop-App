@@ -1,0 +1,13 @@
+node_modules/
+dist/
+target/
+gen/
+pipeline/data/
+pipeline/output/
+*.gguf
+*.part
+*.sqlite
+__pycache__/
+.env
+verify_out.txt
+verify_err.txt
