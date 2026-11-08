@@ -18,6 +18,7 @@ export interface Message {
   content: string;
   sources?: WebSource[];
   streaming?: boolean;
+  rating?: number;
 }
 
 export interface StoredMessage {
@@ -26,6 +27,7 @@ export interface StoredMessage {
   content: string;
   sources: string | null;
   created_at: number;
+  rating: number;
 }
 
 export interface Settings {
@@ -50,6 +52,10 @@ export interface Settings {
   mmproj_file: string;
   frame_interval_secs: number;
   max_frames: number;
+  contribute_url: string;
+  share_asked: boolean;
+  share_enabled: boolean;
+  install_id: string;
 }
 
 export interface HardwareInfo {
@@ -138,4 +144,11 @@ export interface Proposal {
 export interface GithubStatus {
   has_token: boolean;
   repo: string;
+}
+
+export interface ShareStatus {
+  available: boolean;
+  asked: boolean;
+  enabled: boolean;
+  server: string;
 }

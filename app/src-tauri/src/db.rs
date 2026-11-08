@@ -22,6 +22,7 @@ pub struct StoredMessage {
     pub content: String,
     pub sources: Option<String>, // JSON array of web sources
     pub created_at: i64,
+    pub rating: i64, // 1 helpful, -1 not helpful, 0 unrated
 }
 
 impl Db {
@@ -41,7 +42,8 @@ impl Db {
                  role TEXT NOT NULL,
                  content TEXT NOT NULL,
                  sources TEXT,
-                 created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+                 created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                 rating INTEGER NOT NULL DEFAULT 0
              );
              CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id);
              CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -54,6 +56,8 @@ impl Db {
                  prompt TEXT NOT NULL UNIQUE
              );",
         )?;
+        // Databases created before ratings existed get the column added (error = already there).
+        let _ = conn.execute("ALTER TABLE messages ADD COLUMN rating INTEGER NOT NULL DEFAULT 0", []);
         Ok(Self(Mutex::new(conn)))
     }
 
@@ -101,7 +105,7 @@ impl Db {
     pub fn messages(&self, conv: i64) -> Result<Vec<StoredMessage>> {
         let conn = self.0.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, role, content, sources, created_at FROM messages WHERE conversation_id = ?1 ORDER BY id",
+            "SELECT id, role, content, sources, created_at, rating FROM messages WHERE conversation_id = ?1 ORDER BY id",
         )?;
         let rows = stmt.query_map(params![conv], |r| {
             Ok(StoredMessage {
@@ -110,6 +114,7 @@ impl Db {
                 content: r.get(2)?,
                 sources: r.get(3)?,
                 created_at: r.get(4)?,
+                rating: r.get(5)?,
             })
         })?;
         Ok(rows.collect::<Result<_, _>>()?)
@@ -133,6 +138,32 @@ impl Db {
             params![key, value],
         )?;
         Ok(())
+    }
+
+    pub fn set_rating(&self, message_id: i64, rating: i64) -> Result<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute("UPDATE messages SET rating = ?1 WHERE id = ?2 AND role = 'assistant'", params![rating, message_id])?;
+        Ok(())
+    }
+
+    /// The assistant message plus the user message that immediately precedes it.
+    pub fn pair_for(&self, conv: i64, assistant_id: i64) -> Result<Option<(String, String)>> {
+        let conn = self.0.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT a.content, (SELECT u.content FROM messages u
+                 WHERE u.conversation_id = a.conversation_id AND u.id < a.id AND u.role = 'user'
+                 ORDER BY u.id DESC LIMIT 1)
+             FROM messages a WHERE a.id = ?1 AND a.conversation_id = ?2 AND a.role = 'assistant'",
+        )?;
+        let mut rows = stmt.query(params![assistant_id, conv])?;
+        Ok(match rows.next()? {
+            Some(r) => {
+                let assistant: String = r.get(0)?;
+                let user: Option<String> = r.get(1)?;
+                user.map(|u| (u, assistant))
+            }
+            None => None,
+        })
     }
 
     pub fn set_media(&self, conv: i64, timeline: &str) -> Result<()> {

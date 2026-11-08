@@ -17,8 +17,8 @@ GGUF_DIR = OUTPUT_DIR / "gguf"
 TEACHER_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
 
 # Student base model (open weights).
-BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-3B-Instruct-bnb-4bit")
-MAX_SEQ_LEN = 2048
+BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-Coder-7B-Instruct-bnb-4bit")
+MAX_SEQ_LEN = 4096
 
 SYSTEM_PROMPT = (
     "You are a direct, precise assistant. Think step by step inside "
@@ -33,6 +33,15 @@ CATEGORIES: dict[str, tuple[str, int]] = {
     "instruction": ("precise instruction following with strict output formats", 5),
     "conversation": ("multi-turn style conversational repair and clarification", 5),
     "summarization": ("summarizing and rewriting short passages", 5),
+    "code_debugging": (
+        "finding and fixing bugs in realistic Python/JS/TS/Rust snippets: show the buggy code, "
+        "the root cause, then the fixed code", 3),
+    "code_review": ("reviewing a code diff for bugs, security and style issues, with concrete fixes", 3),
+    "code_tsx_react": ("React + TypeScript (TSX) components, hooks and Tailwind CSS", 3),
+    "code_rust": ("idiomatic Rust: ownership, error handling, async, small CLI/tools", 3),
+    "code_tests": ("writing unit tests (pytest, vitest) and refactoring code to be testable", 3),
+    "code_algorithms": ("algorithms and data structures with complexity analysis and tests", 3),
+    "code_sql_shell": ("SQL queries, PowerShell and bash scripts with explanations", 4),
     "web_grounded": (
         "answering questions using supplied web-search snippets and citing "
         "them as [1], [2]; refusing to invent facts that the snippets lack",

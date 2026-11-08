@@ -13,7 +13,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 const FRAME_PROMPT: &str = "This is one frame from a movie or TV episode. In one or two sentences \
 describe the setting, who is visible, what they are doing, and any readable on-screen text.";
-const MAX_TIMELINE_CHARS: usize = 6000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "data", rename_all = "camelCase")]
@@ -83,14 +82,6 @@ pub fn build_timeline(seen: &[(f32, String)], heard: &[(f32, String)], interval:
         lines.push(line);
     }
     lines.join("\n")
-}
-
-fn truncate_chars(text: String, max: usize) -> String {
-    if text.chars().count() <= max {
-        return text;
-    }
-    let cut: String = text.chars().take(max).collect();
-    format!("{cut}\n[timeline truncated - raise the frame interval for long videos]")
 }
 
 pub async fn watch<F>(
@@ -184,7 +175,7 @@ async fn pipeline<F: Fn(MediaEvent)>(
         duration_secs: duration,
         frames: frames.len(),
         heard_audio: !heard.is_empty(),
-        timeline: truncate_chars(build_timeline(&seen, &heard, interval), MAX_TIMELINE_CHARS),
+        timeline: build_timeline(&seen, &heard, interval),
     })
 }
 

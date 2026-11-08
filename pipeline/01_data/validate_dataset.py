@@ -1,10 +1,14 @@
 """Phase 1 - Validation: filter malformed, oversized, duplicate or template-broken rows."""
 from __future__ import annotations
 
+import argparse
+import ast
 import hashlib
 import json
 import re
+import subprocess
 import sys
+import tempfile
 from collections import Counter
 from pathlib import Path
 
@@ -14,6 +18,48 @@ import config  # noqa: E402
 REASONING_RE = re.compile(r"<reasoning>.+?</reasoning>\s*<answer>.+?</answer>\s*$", re.S)
 ROLES = ["system", "user", "assistant"]
 SUSPICIOUS = ("as an ai language model", "i cannot browse", "lorem ipsum", "[insert")
+
+
+FENCE_RE = re.compile(r"```([A-Za-z0-9_+-]*)\n(.*?)```", re.S)
+
+
+def code_blocks(text: str) -> list[tuple[str, str]]:
+    return [(lang.lower(), body) for lang, body in FENCE_RE.findall(text)]
+
+
+def check_code(assistant: str) -> str | None:
+    """Syntax-check Python and JSON blocks; code that does not even parse must not be learned."""
+    for lang, body in code_blocks(assistant):
+        if lang in ("python", "py"):
+            try:
+                ast.parse(body)
+            except SyntaxError:
+                return "bad_python_syntax"
+        elif lang == "json":
+            try:
+                json.loads(body)
+            except json.JSONDecodeError:
+                return "bad_json_block"
+    if assistant.count("```") % 2:
+        return "unclosed_code_fence"
+    return None
+
+
+def run_python_tests(assistant: str, timeout: int = 10) -> str | None:
+    """Execute Python blocks that contain assert-based tests. WARNING: runs model-written code."""
+    for lang, body in code_blocks(assistant):
+        if lang not in ("python", "py") or "assert" not in body:
+            continue
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                proc = subprocess.run(
+                    [sys.executable, "-I", "-c", body], cwd=tmp, capture_output=True, timeout=timeout, text=True
+                )
+            except subprocess.TimeoutExpired:
+                return "execution_timeout"
+        if proc.returncode != 0:
+            return "failed_execution"
+    return None
 
 
 def check_row(row: dict) -> str | None:
@@ -35,10 +81,17 @@ def check_row(row: dict) -> str | None:
         return "suspicious_text"
     if assistant.count("<reasoning>") != 1 or assistant.count("<answer>") != 1:
         return "tag_count"
-    return None
+    return check_code(assistant)
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="run assert-based Python tests from the samples (executes untrusted code: use a VM/container)",
+    )
+    args = parser.parse_args()
     if not config.RAW_DATASET.exists():
         sys.exit(f"Missing {config.RAW_DATASET}; run generate_dataset.py first.")
 
@@ -56,6 +109,8 @@ def main() -> None:
                 rejected["bad_json"] += 1
                 continue
             reason = check_row(row)
+            if reason is None and args.execute:
+                reason = run_python_tests(row["messages"][2]["content"])
             if reason:
                 rejected[reason] += 1
                 continue

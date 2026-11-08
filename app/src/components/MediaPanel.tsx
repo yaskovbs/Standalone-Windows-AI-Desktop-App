@@ -101,7 +101,7 @@ export default function MediaPanel({ onClose, ensureConversation }: Props) {
         </div>
         <p className="mt-2 text-xs text-slate-500">
           It samples frames and transcribes the audio, so it follows the story but does not see every moment.
-          Streaming services (Netflix etc.) cannot be read - use files you own.
+          No file-size limit: the file is streamed from disk, never loaded into memory (long films just take longer; raise \"max frames\" in Settings for more detail). Streaming services (Netflix etc.) cannot be read - use files you own.
         </p>
       </section>
 

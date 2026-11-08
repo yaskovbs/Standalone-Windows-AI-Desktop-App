@@ -181,7 +181,10 @@ async fn run_chat(
         extra.push(prompt::web_context(&sources));
     }
     if let Some(timeline) = state.db.get_media(conv).map_err(err)? {
-        extra.push(format!("Video timeline (what was seen and heard):\n{timeline}"));
+        // No size cap on the video: pick the moments relevant to the question to fit the context.
+        let budget = (settings.context_size.saturating_sub(settings.max_tokens) as usize / 2) * 3;
+        let shown = prompt::select_timeline(&timeline, &content, budget);
+        extra.push(format!("Video timeline (what was seen and heard):\n{shown}"));
     }
     let web_block = (!extra.is_empty()).then(|| extra.join("\n\n"));
     let turns: Vec<Turn> = history
@@ -230,7 +233,12 @@ pub fn get_settings(state: State<'_, AppState>) -> Settings {
 
 #[tauri::command]
 pub fn save_settings(state: State<'_, AppState>, settings: Settings) -> CmdResult<Settings> {
-    let clean = settings.sanitized();
+    // Consent state is owned by the backend (set_share_consent / withdraw_data), never by the UI payload.
+    let current = Settings::load(&state.db);
+    let mut clean = settings.sanitized();
+    clean.share_asked = current.share_asked;
+    clean.share_enabled = current.share_enabled;
+    clean.install_id = current.install_id;
     clean.save(&state.db).map_err(err)?;
     Ok(clean)
 }

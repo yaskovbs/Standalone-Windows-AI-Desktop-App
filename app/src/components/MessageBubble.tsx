@@ -2,7 +2,13 @@ import { useState } from "react";
 import { parseReply } from "../lib/api";
 import type { Message } from "../types";
 
-export default function MessageBubble({ message }: { message: Message }) {
+interface Props {
+  message: Message;
+  onRate?: (messageId: number, rating: number) => Promise<string>;
+}
+
+export default function MessageBubble({ message, onRate }: Props) {
+  const [info, setInfo] = useState("");
   const [showReasoning, setShowReasoning] = useState(false);
   const isUser = message.role === "user";
   const { reasoning, answer } = isUser
@@ -30,6 +36,22 @@ export default function MessageBubble({ message }: { message: Message }) {
         <div className={`whitespace-pre-wrap ${message.streaming ? "cursor" : ""}`}>
           {answer || (message.streaming && !reasoning ? "" : answer)}
         </div>
+
+        {!isUser && !message.streaming && message.id > 0 && onRate && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+            {[1, -1].map((value) => (
+              <button
+                key={value}
+                title={value === 1 ? "Helpful" : "Not helpful"}
+                className={`rounded px-1.5 py-0.5 hover:bg-white/10 ${message.rating === value ? "bg-white/10 text-slate-100" : ""}`}
+                onClick={() => onRate(message.id, message.rating === value ? 0 : value).then(setInfo).catch((e) => setInfo(String(e)))}
+              >
+                {value === 1 ? "👍" : "👎"}
+              </button>
+            ))}
+            {info && <span>{info}</span>}
+          </div>
+        )}
 
         {message.sources && message.sources.length > 0 && (
           <ol className="mt-3 space-y-1 border-t border-line pt-2 text-xs text-slate-400">

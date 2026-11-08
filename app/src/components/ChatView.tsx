@@ -6,9 +6,10 @@ interface Props {
   messages: Message[];
   error: string | null;
   stats: GenStats | null;
+  onRate: (messageId: number, rating: number) => Promise<string>;
 }
 
-export default function ChatView({ messages, error, stats }: Props) {
+export default function ChatView({ messages, error, stats, onRate }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function ChatView({ messages, error, stats }: Props) {
     <div className="flex-1 overflow-y-auto px-4 py-6">
       <div className="mx-auto max-w-3xl space-y-4">
         {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
+          <MessageBubble key={m.id} message={m} onRate={onRate} />
         ))}
         {error && (
           <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>

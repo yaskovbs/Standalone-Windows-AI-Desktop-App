@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { toolsApi } from "../lib/toolsApi";
 import type { Conversation, GenStats, Message } from "../types";
 
 /** Conversation list + active chat state + token streaming. */
@@ -28,6 +29,7 @@ export function useChat() {
         role: m.role as Message["role"],
         content: m.content,
         sources: m.sources ? JSON.parse(m.sources) : undefined,
+        rating: m.rating,
       })),
     );
   }, []);
@@ -88,9 +90,17 @@ export function useChat() {
     [generating, newChat, refreshList],
   );
 
+  const rate = useCallback(async (messageId: number, rating: number): Promise<string> => {
+    const conv = activeRef.current;
+    if (conv === null) return "";
+    const result = await toolsApi.rateMessage(conv, messageId, rating);
+    setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, rating } : m)));
+    return result;
+  }, []);
+
   useEffect(() => {
     refreshList();
   }, [refreshList]);
 
-  return { conversations, activeId, messages, generating, error, stats, open, newChat, remove, send, stop: api.stop };
+  return { conversations, activeId, messages, generating, error, stats, open, newChat, remove, send, rate, stop: api.stop };
 }

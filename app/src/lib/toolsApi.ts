@@ -5,6 +5,7 @@ import type {
   MediaEvent,
   MediaMemory,
   Proposal,
+  ShareStatus,
   ToolsStatus,
 } from "../types";
 
@@ -35,6 +36,12 @@ export const toolsApi = {
   attachMedia: (conversationId: number, memory: MediaMemory) =>
     invoke<void>("attach_media", { conversationId, memory }),
   clearMedia: (conversationId: number) => invoke<void>("clear_media", { conversationId }),
+
+  shareStatus: () => invoke<ShareStatus>("share_status"),
+  setShareConsent: (enabled: boolean) => invoke<ShareStatus>("set_share_consent", { enabled }),
+  withdrawData: () => invoke<ShareStatus>("withdraw_data"),
+  rateMessage: (conversationId: number, messageId: number, rating: number) =>
+    invoke<string>("rate_message", { conversationId, messageId, rating }),
 
   githubStatus: () => invoke<GithubStatus>("github_status"),
   githubSaveToken: (token: string) => invoke<string>("github_save_token", { token }),

@@ -49,6 +49,23 @@ you review the diff, and approval opens a **draft PR** on an `ai/update-*` branc
 pushes to the default branch or merges. Editable paths: `app/src`, `app/src-tauri/src`, `pipeline`, `README.md`;
 `github.rs`, `proposals.rs` and `commands_github.rs` are protected.
 
+## 5. Learning from users (opt-in) and the server
+`server/` is a small FastAPI service you host (HTTPS). Set its URL in Settings -> Learning programme.
+On first launch users see a notice and must click **Share** before anything is sent. Only answers rated 👍 are
+uploaded (question + reply), after automatic redaction of emails, phones, keys, IPs and user folders; videos, audio,
+screenshots, images, settings, tokens and video chats are never sent. Users can withdraw and delete their data
+from Settings. Training is periodic, not live: `merge_contributions.py` -> `validate_dataset.py` -> retrain.
+Read `server/README.md` for your operator duties (privacy policy, deletion requests, GDPR).
+
+## 6. Media size and code quality
+- No file-size limit on videos: ffmpeg streams from disk. Long films take longer; raise *max frames* for detail.
+  Very long timelines are condensed per question (relevant scenes + an even overview), never cut off.
+- Code skills: the pipeline now defaults to Qwen2.5-Coder-7B, 4096-token samples, rank 32, 7 coding categories,
+  syntax checks on every Python/JSON block, and `validate_dataset.py --execute` to run the generated self-tests
+  (use a VM/container: it executes model-written code). The runtime default is Qwen2.5-Coder-3B; for a 7B model
+  set the Model URL in Settings. A local 3B-7B model will not match a frontier model - expect it to be solid on
+  routine code, weaker on large or novel problems.
+
 ## Notes
 - Rust logic tests (path guard, proposal parser, diff, web parsing, prompt trimming) pass; the full Windows build and the
   sidecar/audio/screen code have not been compiled or run; `llama-cpp-2` APIs change between

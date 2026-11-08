@@ -32,7 +32,16 @@ Rules:
 - Be factually correct. Never invent APIs, quotes or statistics.
 - For web_grounded examples, put numbered snippets in the user message
   and cite only facts present in them.
-- Return ONLY a JSON array. Each item: {{"user": "...", "assistant": "..."}}
+{extra_rules}- Return ONLY a JSON array. Each item: {{"user": "...", "assistant": "..."}}
+"""
+
+
+CODE_RULES = """
+Coding rules (this category is about code):
+- Code must be complete, runnable and correct - no placeholders, no "..." and no invented APIs.
+- Use fenced blocks with a language tag (```python, ```tsx, ```rust ...).
+- For Python, end the code with assert-based self-tests that pass.
+- Explain the reasoning briefly inside <reasoning>; put the final code inside <answer>.
 """
 
 
@@ -50,7 +59,11 @@ def extract_json_array(text: str) -> list[dict]:
 def one_call(client: anthropic.Anthropic, category: str) -> list[dict]:
     description, n = config.CATEGORIES[category]
     prompt = GENERATOR_PROMPT.format(
-        n=n, category=category, description=description, seed=random.randint(0, 10**9)
+        n=n,
+        category=category,
+        description=description,
+        seed=random.randint(0, 10**9),
+        extra_rules=CODE_RULES if category.startswith("code") or category == "coding_python" or category == "coding_web" else "",
     )
     resp = client.messages.create(
         model=config.TEACHER_MODEL,

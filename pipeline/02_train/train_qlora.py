@@ -13,8 +13,8 @@ TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj"
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rank", type=int, default=16, choices=[16, 32])
-    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--rank", type=int, default=32, choices=[16, 32])
+    parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--batch", type=int, default=2)
     parser.add_argument("--accum", type=int, default=8)

@@ -3,6 +3,8 @@
 mod commands;
 mod commands_github;
 mod commands_media;
+mod commands_share;
+mod contribute;
 mod db;
 mod download;
 mod engine;
@@ -11,6 +13,7 @@ mod hardware;
 mod media;
 mod prompt;
 mod proposals;
+mod redact;
 mod settings;
 mod tools;
 mod vision;
@@ -133,6 +136,10 @@ pub fn run() {
             commands_media::cancel_media,
             commands_media::attach_media,
             commands_media::clear_media,
+            commands_share::share_status,
+            commands_share::set_share_consent,
+            commands_share::withdraw_data,
+            commands_share::rate_message,
             commands_github::github_status,
             commands_github::github_save_token,
             commands_github::github_clear_token,

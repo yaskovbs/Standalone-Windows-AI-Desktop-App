@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import type { Settings } from "../types";
+import { toolsApi } from "../lib/toolsApi";
+import type { Settings, ShareStatus } from "../types";
 
 interface Props {
   onClose: () => void;
@@ -11,10 +12,12 @@ export default function SettingsPanel({ onClose, onSaved }: Props) {
   const [s, setS] = useState<Settings | null>(null);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [note, setNote] = useState("");
+  const [share, setShare] = useState<ShareStatus | null>(null);
 
   useEffect(() => {
     api.getSettings().then(setS);
     api.bookmarks().then(setBookmarks);
+    toolsApi.shareStatus().then(setShare);
   }, []);
 
   if (!s) return null;
@@ -98,6 +101,34 @@ export default function SettingsPanel({ onClose, onSaved }: Props) {
           <label className="block">Speech model URL
             <input className={field} value={s.whisper_model_url} onChange={(e) => set("whisper_model_url", e.target.value)} />
           </label>
+
+          <div className="rounded-lg border border-line p-3">
+            <div className="mb-1 font-medium">Learning programme</div>
+            <label className="block text-xs">Sharing server URL (https; empty = feature off)
+              <input className={field} value={s.contribute_url} onChange={(e) => set("contribute_url", e.target.value)} />
+            </label>
+            {share?.available && (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span>{share.enabled ? "Sharing 👍 answers: ON" : "Sharing: OFF"}</span>
+                <span className="flex gap-3">
+                  <button className="text-accent" onClick={async () => setShare(await toolsApi.setShareConsent(!share.enabled))}>
+                    {share.enabled ? "Turn off" : "Turn on"}
+                  </button>
+                  {share.enabled && (
+                    <button
+                      className="text-red-300"
+                      onClick={async () => {
+                        try { setShare(await toolsApi.withdrawData()); setNote("Your shared data was deleted."); }
+                        catch (e) { setNote(String(e)); }
+                      }}
+                    >
+                      Withdraw &amp; delete my data
+                    </button>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
 
           {bookmarks.length > 0 && (
             <div>

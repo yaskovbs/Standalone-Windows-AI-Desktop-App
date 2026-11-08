@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ConsentDialog from "./components/ConsentDialog";
 import GithubPanel from "./components/GithubPanel";
 import MediaPanel from "./components/MediaPanel";
 import ChatView from "./components/ChatView";
@@ -62,7 +63,7 @@ export default function App() {
           onGithub={() => setPanel("github")}
         />
         <main className="flex min-w-0 flex-1 flex-col">
-          <ChatView messages={chat.messages} error={chat.error} stats={chat.stats} />
+          <ChatView messages={chat.messages} error={chat.error} stats={chat.stats} onRate={chat.rate} />
           <Composer
             key={webDefault ? "web" : "noweb"}
             generating={chat.generating}
@@ -81,6 +82,7 @@ export default function App() {
         {setup.online ? "online" : "offline"}
       </footer>
 
+      {setup.status.loaded && <ConsentDialog />}
       {panel === "settings" && (
         <SettingsPanel
           onClose={() => setPanel(null)}

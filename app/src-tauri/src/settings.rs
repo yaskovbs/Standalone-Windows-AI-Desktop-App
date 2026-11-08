@@ -4,12 +4,14 @@ use crate::db::Db;
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_MODEL_URL: &str =
-    "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf";
+    "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/resolve/main/qwen2.5-coder-3b-instruct-q4_k_m.gguf";
 pub const DEFAULT_SYSTEM_PROMPT: &str =
     "You are a direct, precise assistant. Think step by step inside <reasoning> tags, \
      then give the final result inside <answer> tags. When web results are provided, \
      use only facts from them and cite them as [1], [2]. When a video timeline is provided, \
-     answer from it and quote its time codes; say so if the timeline does not cover a question.";
+     answer from it and quote its time codes; say so if the timeline does not cover a question. \
+     For code: give complete, runnable code in fenced blocks, state assumptions, handle edge cases, \
+     and add a short usage example. Never invent APIs; say when you are unsure.";
 
 // Defaults below are editable in Settings; verify the URLs still exist before shipping.
 const WHISPER_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin";
@@ -44,6 +46,11 @@ pub struct Settings {
     pub mmproj_file: String,
     pub frame_interval_secs: u32,
     pub max_frames: u32,
+    // opt-in learning programme (server URL is empty until the operator sets one)
+    pub contribute_url: String,
+    pub share_asked: bool,
+    pub share_enabled: bool,
+    pub install_id: String,
 }
 
 impl Default for Settings {
@@ -53,8 +60,8 @@ impl Default for Settings {
             model_file: "custom_assistant_q4_k_m.gguf".into(),
             system_prompt: DEFAULT_SYSTEM_PROMPT.into(),
             temperature: 0.7,
-            max_tokens: 1024,
-            context_size: 4096,
+            max_tokens: 2048,
+            context_size: 8192,
             web_search_default: true,
             search_results: 4,
             check_updates: true,
@@ -70,6 +77,10 @@ impl Default for Settings {
             mmproj_file: "vision-mmproj.gguf".into(),
             frame_interval_secs: 20,
             max_frames: 40,
+            contribute_url: String::new(),
+            share_asked: false,
+            share_enabled: false,
+            install_id: String::new(),
         }
     }
 }
@@ -96,12 +107,14 @@ impl Settings {
         self.search_results = self.search_results.clamp(1, 8);
         self.speech_rate = self.speech_rate.clamp(-10, 10);
         self.frame_interval_secs = self.frame_interval_secs.clamp(2, 600);
-        self.max_frames = self.max_frames.clamp(4, 200);
+        self.max_frames = self.max_frames.clamp(4, 2000);
         let safe = |f: &str| !f.is_empty() && !f.contains(['/', '\\', ':']) && !f.contains("..");
         if !safe(&self.model_file) { self.model_file = defaults.model_file; }
         if !safe(&self.whisper_model_file) { self.whisper_model_file = defaults.whisper_model_file; }
         if !safe(&self.vision_model_file) { self.vision_model_file = defaults.vision_model_file; }
         if !safe(&self.mmproj_file) { self.mmproj_file = defaults.mmproj_file; }
+        let url = self.contribute_url.trim().to_string();
+        self.contribute_url = if crate::contribute::check_base_url(&url).is_ok() { url } else { String::new() };
         self
     }
 }

@@ -30,6 +30,8 @@ hound = "3"
 base64 = "0.22"
 keyring = { version = "3", features = ["windows-native"] }
 xcap = "0.0.14"
+regex = "1"
+uuid = { version = "1", features = ["v4"] }
 
 [features]
 # Enable NVIDIA acceleration: cargo tauri build --features cuda
