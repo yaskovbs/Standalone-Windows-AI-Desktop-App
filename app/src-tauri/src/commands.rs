@@ -175,7 +175,15 @@ async fn run_chat(
             let _ = on_event.send(ChatEvent::Sources { items: sources.clone() });
         }
     }
-    let web_block = (!sources.is_empty()).then(|| prompt::web_context(&sources));
+    // Extra system context: live web results and/or the timeline of an attached video.
+    let mut extra: Vec<String> = Vec::new();
+    if !sources.is_empty() {
+        extra.push(prompt::web_context(&sources));
+    }
+    if let Some(timeline) = state.db.get_media(conv).map_err(err)? {
+        extra.push(format!("Video timeline (what was seen and heard):\n{timeline}"));
+    }
+    let web_block = (!extra.is_empty()).then(|| extra.join("\n\n"));
     let turns: Vec<Turn> = history
         .iter()
         .map(|m| Turn { role: m.role.clone(), content: m.content.clone() })

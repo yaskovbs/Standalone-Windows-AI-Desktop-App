@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import GithubPanel from "./components/GithubPanel";
+import MediaPanel from "./components/MediaPanel";
 import ChatView from "./components/ChatView";
 import Composer from "./components/Composer";
 import SettingsPanel from "./components/SettingsPanel";
@@ -6,17 +8,32 @@ import SetupScreen from "./components/SetupScreen";
 import Sidebar from "./components/Sidebar";
 import { useChat } from "./hooks/useChat";
 import { useSetup } from "./hooks/useSetup";
+import { useSpeakReplies } from "./hooks/useVoice";
 import { api } from "./lib/api";
 
 export default function App() {
   const setup = useSetup();
   const chat = useChat();
-  const [showSettings, setShowSettings] = useState(false);
+  const [panel, setPanel] = useState<"settings" | "media" | "github" | null>(null);
   const [webDefault, setWebDefault] = useState(true);
+  const [speak, setSpeak] = useState(false);
 
   useEffect(() => {
-    api.getSettings().then((s) => setWebDefault(s.web_search_default));
+    api.getSettings().then((s) => {
+      setWebDefault(s.web_search_default);
+      setSpeak(s.speak_replies);
+    });
   }, []);
+
+  useSpeakReplies(chat.messages, chat.generating, speak);
+
+  const changeSpeak = async (v: boolean) => {
+    setSpeak(v);
+    const s = await api.getSettings();
+    await api.saveSettings({ ...s, speak_replies: v });
+  };
+
+  const ensureConversation = async () => chat.activeId ?? (await chat.newChat());
 
   if (!setup.status?.loaded) return <SetupScreen setup={setup} />;
 
@@ -40,7 +57,9 @@ export default function App() {
           onOpen={chat.open}
           onNew={chat.newChat}
           onDelete={chat.remove}
-          onSettings={() => setShowSettings(true)}
+          onSettings={() => setPanel("settings")}
+          onMedia={() => setPanel("media")}
+          onGithub={() => setPanel("github")}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           <ChatView messages={chat.messages} error={chat.error} stats={chat.stats} />
@@ -49,6 +68,8 @@ export default function App() {
             generating={chat.generating}
             online={setup.online}
             webDefault={webDefault}
+            speak={speak}
+            onSpeakChange={changeSpeak}
             onSend={chat.send}
             onStop={chat.stop}
           />
@@ -60,9 +81,17 @@ export default function App() {
         {setup.online ? "online" : "offline"}
       </footer>
 
-      {showSettings && (
-        <SettingsPanel onClose={() => setShowSettings(false)} onSaved={(s) => setWebDefault(s.web_search_default)} />
+      {panel === "settings" && (
+        <SettingsPanel
+          onClose={() => setPanel(null)}
+          onSaved={(s) => {
+            setWebDefault(s.web_search_default);
+            setSpeak(s.speak_replies);
+          }}
+        />
       )}
+      {panel === "media" && <MediaPanel onClose={() => setPanel(null)} ensureConversation={ensureConversation} />}
+      {panel === "github" && <GithubPanel onClose={() => setPanel(null)} />}
     </div>
   );
 }

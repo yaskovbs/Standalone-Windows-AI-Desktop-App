@@ -1,15 +1,25 @@
-//! LocalAutonomousAI - Tauri v2 backend (internet-connected, local LLM).
+//! LocalAutonomousAI - Tauri v2 backend (internet-connected, local LLM, voice + vision).
 
 mod commands;
+mod commands_github;
+mod commands_media;
 mod db;
 mod download;
 mod engine;
+mod github;
 mod hardware;
+mod media;
 mod prompt;
+mod proposals;
 mod settings;
+mod tools;
+mod vision;
+mod voice;
 mod web;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Child;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use tauri::menu::{Menu, MenuItem};
@@ -23,6 +33,12 @@ pub struct AppState {
     pub models_dir: PathBuf,
     pub cancel: Arc<AtomicBool>,
     pub busy: AtomicBool,
+    pub tools: tools::Tools,
+    pub recorder: Mutex<Option<voice::Recorder>>,
+    pub tts: Mutex<Option<Child>>,
+    pub media_cancel: AtomicBool,
+    pub media_busy: AtomicBool,
+    pub proposals: Mutex<HashMap<String, proposals::Proposal>>,
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
@@ -49,19 +65,31 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let models_dir = data_dir.join("models");
+            let tools_dir = data_dir.join("tools");
             std::fs::create_dir_all(&models_dir)?;
-            let db = db::Db::open(&data_dir.join("local_db.sqlite"))?;
+            std::fs::create_dir_all(&tools_dir)?;
+            let mut tool_dirs = vec![tools_dir];
+            if let Ok(res) = app.path().resource_dir() {
+                tool_dirs.push(res.join("tools"));
+            }
 
             app.manage(AppState {
-                db,
+                db: db::Db::open(&data_dir.join("local_db.sqlite"))?,
                 engine: Mutex::new(None),
                 hardware: hardware::detect(),
                 models_dir,
                 cancel: Arc::new(AtomicBool::new(false)),
                 busy: AtomicBool::new(false),
+                tools: tools::Tools::new(tool_dirs),
+                recorder: Mutex::new(None),
+                tts: Mutex::new(None),
+                media_cancel: AtomicBool::new(false),
+                media_busy: AtomicBool::new(false),
+                proposals: Mutex::new(HashMap::new()),
             });
             setup_tray(app)?;
             Ok(())
@@ -93,6 +121,24 @@ pub fn run() {
             commands::web_search,
             commands::check_update,
             commands::is_online,
+            commands_media::tools_status,
+            commands_media::download_asset,
+            commands_media::voice_start,
+            commands_media::voice_stop,
+            commands_media::speak,
+            commands_media::stop_speaking,
+            commands_media::describe_image,
+            commands_media::describe_screen,
+            commands_media::watch_media,
+            commands_media::cancel_media,
+            commands_media::attach_media,
+            commands_media::clear_media,
+            commands_github::github_status,
+            commands_github::github_save_token,
+            commands_github::github_clear_token,
+            commands_github::github_propose,
+            commands_github::github_reject,
+            commands_github::github_approve,
         ])
         .run(tauri::generate_context!())
         .expect("error while running LocalAutonomousAI");

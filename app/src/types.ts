@@ -39,6 +39,17 @@ export interface Settings {
   search_results: number;
   check_updates: boolean;
   update_repo: string;
+  whisper_model_url: string;
+  whisper_model_file: string;
+  whisper_language: string;
+  speech_rate: number;
+  speak_replies: boolean;
+  vision_model_url: string;
+  vision_model_file: string;
+  mmproj_url: string;
+  mmproj_file: string;
+  frame_interval_secs: number;
+  max_frames: number;
 }
 
 export interface HardwareInfo {
@@ -79,3 +90,52 @@ export type DownloadEvent =
   | { event: "progress"; data: { downloaded: number; total: number } }
   | { event: "done"; data: { path: string } }
   | { event: "error"; data: { message: string } };
+
+export interface ToolsStatus {
+  tools_dir: string;
+  ffmpeg: boolean;
+  whisper_cli: boolean;
+  vision_cli: boolean;
+  whisper_model: boolean;
+  vision_model: boolean;
+  mmproj: boolean;
+}
+
+export interface MediaMemory {
+  title: string;
+  duration_secs: number;
+  frames: number;
+  heard_audio: boolean;
+  timeline: string;
+}
+
+export type MediaEvent =
+  | { event: "stage"; data: { label: string } }
+  | { event: "progress"; data: { done: number; total: number } };
+
+export interface DiffView {
+  before: string[];
+  removed: string[];
+  added: string[];
+  after: string[];
+}
+
+export interface FileChange {
+  path: string;
+  is_new: boolean;
+  sha: string | null;
+  new_content: string;
+  diff: DiffView;
+}
+
+export interface Proposal {
+  id: string;
+  title: string;
+  description: string;
+  changes: FileChange[];
+}
+
+export interface GithubStatus {
+  has_token: boolean;
+  repo: string;
+}

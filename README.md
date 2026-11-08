@@ -33,7 +33,24 @@ npm run tauri build -- --target x86_64-pc-windows-msvc            # CPU
 npm run tauri build -- --target x86_64-pc-windows-msvc --features cuda   # NVIDIA (needs CUDA toolkit)
 ```
 
+## 3. Voice, vision and video (sidecar tools)
+Put these Windows builds in `%APPDATA%\com.localautonomousai.desktop\tools` (or on PATH):
+`ffmpeg.exe`, `whisper-cli.exe` (whisper.cpp release), `llama-mtmd-cli.exe` (llama.cpp release).
+Then open **Eyes & ears** in the app and download the speech, vision and projector models.
+- Hearing: microphone -> whisper.cpp. Speaking: Windows built-in voices (SAPI).
+- Seeing: screenshot or image -> vision model. Watching: a local video file is sampled
+  (frame every N s + transcribed audio) into a time-coded timeline attached to the chat.
+  It is sampled, not frame-perfect, and DRM streams (Netflix etc.) cannot be read.
+
+## 4. Self-update through GitHub (human-approved)
+Settings -> repository `owner/repo`; open **Self-update**, save a fine-grained token limited to that repo
+(Contents + Pull requests: read/write; stored in Windows Credential Manager). The assistant drafts a change,
+you review the diff, and approval opens a **draft PR** on an `ai/update-*` branch. There is no code path that
+pushes to the default branch or merges. Editable paths: `app/src`, `app/src-tauri/src`, `pipeline`, `README.md`;
+`github.rs`, `proposals.rs` and `commands_github.rs` are protected.
+
 ## Notes
-- The Rust backend has not been compiled in CI yet; `llama-cpp-2` APIs change between
+- Rust logic tests (path guard, proposal parser, diff, web parsing, prompt trimming) pass; the full Windows build and the
+  sidecar/audio/screen code have not been compiled or run; `llama-cpp-2` APIs change between
   releases, so expect small signature fixes in `engine.rs` on first build.
 - Web search scrapes DuckDuckGo's HTML endpoint; swap `web::search` for a keyed API if you need reliability.

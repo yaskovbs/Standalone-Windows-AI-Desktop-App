@@ -45,6 +45,10 @@ impl Db {
              );
              CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id);
              CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             CREATE TABLE IF NOT EXISTS media_notes (
+                 conversation_id INTEGER PRIMARY KEY REFERENCES conversations(id) ON DELETE CASCADE,
+                 timeline TEXT NOT NULL
+             );
              CREATE TABLE IF NOT EXISTS bookmarks (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
                  prompt TEXT NOT NULL UNIQUE
@@ -128,6 +132,32 @@ impl Db {
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             params![key, value],
         )?;
+        Ok(())
+    }
+
+    pub fn set_media(&self, conv: i64, timeline: &str) -> Result<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "INSERT INTO media_notes (conversation_id, timeline) VALUES (?1, ?2)
+             ON CONFLICT(conversation_id) DO UPDATE SET timeline = excluded.timeline",
+            params![conv, timeline],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_media(&self, conv: i64) -> Result<Option<String>> {
+        let conn = self.0.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT timeline FROM media_notes WHERE conversation_id = ?1")?;
+        let mut rows = stmt.query(params![conv])?;
+        Ok(match rows.next()? {
+            Some(row) => Some(row.get(0)?),
+            None => None,
+        })
+    }
+
+    pub fn clear_media(&self, conv: i64) -> Result<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute("DELETE FROM media_notes WHERE conversation_id = ?1", params![conv])?;
         Ok(())
     }
 

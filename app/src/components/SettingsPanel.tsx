@@ -75,6 +75,30 @@ export default function SettingsPanel({ onClose, onSaved }: Props) {
             <input className={field} value={s.update_repo} onChange={(e) => set("update_repo", e.target.value)} />
           </label>
 
+          <div className="grid grid-cols-2 gap-3">
+            <label>Speech language (auto, en, he...)
+              <input className={field} value={s.whisper_language} onChange={(e) => set("whisper_language", e.target.value)} />
+            </label>
+            <label>Speaking speed (-10..10)
+              <input className={field} type="number" value={s.speech_rate} onChange={(e) => set("speech_rate", Number(e.target.value))} />
+            </label>
+            <label>Video: seconds between frames
+              <input className={field} type="number" value={s.frame_interval_secs} onChange={(e) => set("frame_interval_secs", Number(e.target.value))} />
+            </label>
+            <label>Video: max frames
+              <input className={field} type="number" value={s.max_frames} onChange={(e) => set("max_frames", Number(e.target.value))} />
+            </label>
+          </div>
+          <label className="block">Vision model URL
+            <input className={field} value={s.vision_model_url} onChange={(e) => set("vision_model_url", e.target.value)} />
+          </label>
+          <label className="block">Vision projector (mmproj) URL
+            <input className={field} value={s.mmproj_url} onChange={(e) => set("mmproj_url", e.target.value)} />
+          </label>
+          <label className="block">Speech model URL
+            <input className={field} value={s.whisper_model_url} onChange={(e) => set("whisper_model_url", e.target.value)} />
+          </label>
+
           {bookmarks.length > 0 && (
             <div>
               <div className="mb-1">Bookmarked prompts</div>

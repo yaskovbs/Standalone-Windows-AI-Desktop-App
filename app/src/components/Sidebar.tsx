@@ -7,9 +7,11 @@ interface Props {
   onNew: () => void;
   onDelete: (id: number) => void;
   onSettings: () => void;
+  onMedia: () => void;
+  onGithub: () => void;
 }
 
-export default function Sidebar({ conversations, activeId, onOpen, onNew, onDelete, onSettings }: Props) {
+export default function Sidebar({ conversations, activeId, onOpen, onNew, onDelete, onSettings, onMedia, onGithub }: Props) {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-panel">
       <button
@@ -42,9 +44,17 @@ export default function Sidebar({ conversations, activeId, onOpen, onNew, onDele
         {conversations.length === 0 && <p className="px-3 py-2 text-xs text-slate-500">No conversations yet.</p>}
       </nav>
 
-      <button className="border-t border-line px-4 py-3 text-left text-sm text-slate-400 hover:text-slate-100" onClick={onSettings}>
-        ⚙ Settings
-      </button>
+      <div className="border-t border-line text-sm text-slate-400">
+        <button className="block w-full px-4 py-2 text-left hover:text-slate-100" onClick={onMedia}>
+          👁 Eyes &amp; ears
+        </button>
+        <button className="block w-full px-4 py-2 text-left hover:text-slate-100" onClick={onGithub}>
+          ⬆ Self-update (GitHub)
+        </button>
+        <button className="block w-full px-4 py-2 text-left hover:text-slate-100" onClick={onSettings}>
+          ⚙ Settings
+        </button>
+      </div>
     </aside>
   );
 }
